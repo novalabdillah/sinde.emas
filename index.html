@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Sistem Naskah Sekolah Elektronik (SINSE)</title>
-  <link rel="icon" type="image/png" href="https://i.ibb.co.com/CpXGKL9p/Logo-SDN-2-Baderan.png" />
+  <link rel="icon" type="image/png" href="logoemas.png" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
   <style>
   body {
@@ -184,9 +184,9 @@
 
   <div class="header">
     <button class="login-button" onclick="document.getElementById('loginModal').style.display='block'">Login Admin</button>
-    <img src="logo.png" alt="Logo Sekolah" style="height: 100px;">
-    <h1>SD NEGERI 2 BADERAN</h1>
-    <p>Jl. Argopuro No. 50 Tlogosari, Kecamatan Sumbermalang</p>
+    <img src="logoemas.png" alt="Logo Sekolah" style="height: 100px;">
+    <h1>SDN Menur Pumpungan IV/236 Surabaya</h1>
+    <p>Jl. Manyar Rejo I nomor 37 Surabaya, Jawa Timur 60118</p>
   </div>
   <!-- Input Pencarian Nomor Surat -->
     <div style="max-width: 500px; margin: 20px auto;">
@@ -222,7 +222,7 @@
   hasil.style.display = "block"; // ✅ tampilkan container hasil
   hasil.innerHTML = "<p>🔄 Memuat data...</p>";
 
-  fetch("https://docs.google.com/spreadsheets/d/1WIfttQBT7ZV2TwMyBS8L9tliEXFiW7cUkuf_ywh7GPE/gviz/tq?tqx=out:json")
+  fetch("https://docs.google.com/spreadsheets/d/1BuCuiTmhFbjF3VSstuNjazSMCZIyG9flSMmagCxDb_g/gviz/tq?tqx=out:json")
     .then(res => res.text())
     .then(text => {
       const json = JSON.parse(text.substring(47).slice(0, -2));
