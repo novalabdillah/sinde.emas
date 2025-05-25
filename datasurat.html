@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistem Naskah Sekolah Elektronik (SINSE)</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co.com/CpXGKL9p/Logo-SDN-2-Baderan.png" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Font Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;600;600&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS + Kustom Font -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6 font-poppins">
+  <div class="max-w-7xl mx-auto">
+  <h2 class="text-2xl font-bold mb-6">📄 Data Surat</h2>
+
+  <!-- Tombol Tambah & Refresh + Search -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2 sm:gap-4">
+    <!-- Tombol kiri -->
+    <div class="flex gap-2">
+      <button onclick="openModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Tambah Data
+      </button>
+      <button onclick="refreshData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+        Refresh
+      </button>
+    </div>
+
+    <!-- Search kanan -->
+    <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Cari data..." 
+           class="p-2 w-full sm:w-64 border rounded" />
+  </div>
+
+  <!-- Tabel -->
+  <div class="overflow-x-auto bg-white rounded shadow">
+    <table class="min-w-full text-sm text-left">
+      <thead class="bg-blue-600 text-white">
+        <tr>
+          <th class="px-4 py-2">No</th>
+          <th class="px-4 py-2">No. Surat</th>
+          <th class="px-4 py-2">Tanggal Surat</th>
+          <th class="px-4 py-2">Penandatangan</th>
+          <th class="px-4 py-2">Jabatan</th>
+          <th class="px-4 py-2">Perihal</th>
+          <th class="px-4 py-2">Unit Kerja</th>
+          <th class="px-4 py-2">Link PDF</th>
+          <th class="px-4 py-2">QR Code</th>
+          <th class="px-4 py-2">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="dataTable" class="divide-y divide-gray-200"></tbody>
+    </table>
+  </div>
+</div>
+
+  <!-- Modal -->
+  <div id="dataModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl">
+      <h3 id="modalTitle" class="text-xl font-semibold mb-4">Tambah Data Surat</h3>
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <input type="text" id="noSurat" placeholder="No. Surat" class="border p-2 rounded w-full">
+        <input type="text" id="tglSurat" placeholder="Tanggal Surat" class="border p-2 rounded w-full">
+        <input type="text" id="penandatangan" placeholder="Penandatangan" class="border p-2 rounded w-full">
+        <input type="text" id="jabatan" placeholder="Jabatan" class="border p-2 rounded w-full">
+        <input type="text" id="perihal" placeholder="Perihal" class="border p-2 rounded w-full">
+        <input type="text" id="unitKerja" placeholder="Unit Kerja" class="border p-2 rounded w-full">
+        <input type="text" id="linkPdf" placeholder="Link PDF" class="border p-2 rounded w-full">
+      </div>
+      <div class="flex justify-end space-x-2">
+        <button onclick="closeModal()" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Batal</button>
+        <button id="saveBtn" onclick="addData()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-8 hidden">
+      <span class="material-icons animate-spin text-4xl text-blue-600">autorenew</span>
+      <p class="mt-2 text-gray-600">Memuat data...</p>
+    </div>
+
+  <!-- Modal Popup -->
+    <div id="qrPopup" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+      <div class="bg-white rounded-lg shadow-2xl w-96 overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 text-white px-6 py-4 text-center">
+          <h2 class="text-lg font-semibold">Tanda Tangan Elektronik (TTE)</h2>
+        </div>
+    
+        <!-- Body -->
+        <div class="p-6 text-center">
+          <img id="qrImage" src="" alt="QR Code" class="mx-auto mb-6 max-w-full rounded shadow-md">
+        </div>
+    
+        <!-- Footer Buttons -->
+        <div class="px-6 pb-6 flex justify-center gap-4">
+          <button onclick="copyQRCodeImage()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Copy Image
+          </button>
+          <button onclick="closePopup()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
+            Close
+          </button>
+        </div>
+    
+      </div>
+    </div>
+
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbzeI9QF3KPEywQtkgdvpP04Eha1aDy7wwoba-HCRfI5DSI2GmlXEXSBs6coWHQbtzQSgw/exec";
+  let editingRow = null;
+
+  const modal = document.getElementById('dataModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const saveBtn = document.getElementById('saveBtn');
+
+  function openModal(isEdit = false) {
+    modal.classList.remove('hidden');
+    modalTitle.textContent = isEdit ? 'Edit Data Surat' : 'Tambah Data Surat';
+    saveBtn.textContent = isEdit ? 'Perbarui' : 'Simpan';
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    document.querySelectorAll('#dataModal input').forEach(input => input.value = '');
+    saveBtn.onclick = addData;
+    editingRow = null;
+  }
+
+  function isRowEmpty(row) {
+    // Cek jika semua kolom kosong kecuali indeks 0 (biasanya ID atau row number)
+    return row.slice(1).every(cell => !cell || cell.trim() === "");
+  }
+
+  async function fetchData() {
+    const res = await fetch(`${API_URL}?action=read`);
+    const data = await res.json();
+    const tbody = document.getElementById('dataTable');
+    tbody.innerHTML = '';
+
+    let rowNumber = 1;
+    data.slice(1).forEach((row, i) => {
+      if (isRowEmpty(row)) return; // Lewati baris kosong
+
+      const tr = document.createElement('tr');
+      tr.className = i % 2 === 0 ? 'bg-white' : 'bg-blue-50';
+      tr.innerHTML = `
+      <td class="px-4 py-2">${rowNumber++}</td>
+      <td class="px-4 py-2">${row[1]}</td>
+      <td class="px-4 py-2">${row[2]}</td>
+      <td class="px-4 py-2">${row[3]}</td>
+      <td class="px-4 py-2">${row[4]}</td>
+      <td class="px-4 py-2">${row[5]}</td>
+      <td class="px-4 py-2">${row[6]}</td>
+      <td class="px-4 py-2 text-center">
+        <a href="${row[7]}" class="text-blue-500" target="_blank" title="Lihat">
+          <span class="material-icons">link</span>
+        </a>
+      </td>
+      
+      <!-- Tombol QR Code -->
+        <td class="px-4 py-2 text-center">
+          <button onclick="showQRCodePopup('${row[8]}')" title="Lihat QR Code">
+            <span class="material-icons text-blue-500">qr_code</span>
+          </button>
+        </td>
+        
+      <td class="px-4 py-2 text-center">
+        <div class="flex items-center justify-center gap-2">
+          <button onclick='editData(${i + 1}, ${JSON.stringify(row).replace(/"/g, "&quot;")})'title="Edit">
+            <span class="material-icons text-blue-500">edit_note</span>
+          </button>
+          <button onclick="deleteData(${i + 1})"title="Hapus">
+            <span class="material-icons text-blue-500">delete_outline</span>
+          </button>
+        </div>
+      </td>
+    `;
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function getInputValues() {
+    return [
+      '',
+      document.getElementById('noSurat').value,
+      document.getElementById('tglSurat').value,
+      document.getElementById('penandatangan').value,
+      document.getElementById('jabatan').value,
+      document.getElementById('perihal').value,
+      document.getElementById('unitKerja').value,
+      document.getElementById('linkPdf').value
+    ];
+  }
+
+  async function addData() {
+    const data = getInputValues();
+    Swal.fire({ title: 'Menyimpan...', didOpen: () => Swal.showLoading() });
+
+    try {
+      await fetch(`${API_URL}?action=create`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      Swal.fire('Berhasil!', 'Data berhasil ditambahkan.', 'success');
+      closeModal();
+      fetchData();
+    } catch {
+      Swal.fire('Gagal', 'Terjadi kesalahan saat menambah data.', 'error');
+    }
+  }
+
+  function editData(row, data) {
+    editingRow = row;
+    const inputs = document.querySelectorAll('#dataModal input');
+    [1, 2, 3, 4, 5, 6, 7].forEach((i, idx) => inputs[idx].value = data[i]);
+    openModal(true);
+    saveBtn.onclick = () => updateData(row);
+  }
+
+  async function updateData(row) {
+    const values = getInputValues();
+    Swal.fire({ title: 'Memperbarui...', didOpen: () => Swal.showLoading() });
+
+    try {
+      await fetch(`${API_URL}?action=update`, {
+        method: 'POST',
+        body: JSON.stringify({ row, values })
+      });
+      Swal.fire('Berhasil!', 'Data berhasil diperbarui.', 'success');
+      closeModal();
+      fetchData();
+    } catch {
+      Swal.fire('Gagal', 'Terjadi kesalahan saat memperbarui data.', 'error');
+    }
+  }
+
+  async function deleteData(row) {
+    const result = await Swal.fire({
+      title: 'Yakin hapus?',
+      text: 'Data yang dihapus tidak bisa dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    });
+    if (!result.isConfirmed) return;
+
+    Swal.fire({ title: 'Menghapus...', didOpen: () => Swal.showLoading() });
+
+    try {
+      await fetch(`${API_URL}?action=delete&row=${row}`);
+      Swal.fire('Terhapus!', 'Data berhasil dihapus.', 'success');
+      fetchData();
+    } catch {
+      Swal.fire('Gagal', 'Terjadi kesalahan saat menghapus data.', 'error');
+    }
+  }
+
+  function searchTable() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.getElementById("dataTable").getElementsByTagName("tr");
+
+    Array.from(rows).forEach(row => {
+      const cells = row.getElementsByTagName("td");
+      const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(input));
+      row.style.display = match ? "" : "none";
+    });
+  }
+
+  window.onload = fetchData;
+  
+  function showQRCodePopup(imageUrl) {
+    document.getElementById("qrImage").src = imageUrl;
+    document.getElementById("qrPopup").classList.remove("hidden");
+  }
+
+  function closePopup() {
+    document.getElementById("qrPopup").classList.add("hidden");
+  }
+
+  async function copyQRCodeImage() {
+    const img = document.getElementById("qrImage");
+    try {
+      const data = await fetch(img.src);
+      const blob = await data.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob })
+      ]);
+
+      // Ganti alert dengan SweetAlert sukses
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Gambar QR Code berhasil disalin!',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    } catch (err) {
+      // Ganti alert dengan SweetAlert error
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: 'Gagal menyalin gambar. Browser tidak mendukung.',
+      });
+    }
+  }
+  
+  async function refreshData() {
+  const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
+  const loadingIndicator = document.getElementById("loadingIndicator");
+  const tableBody = document.getElementById("dataTable");
+
+  // Ubah tombol dan tampilkan loading
+  refreshBtn.disabled = true;
+  refreshBtn.innerHTML = `<span class="material-icons animate-spin">autorenew</span> Memuat...`;
+  loadingIndicator.classList.remove("hidden");
+  tableBody.parentElement.classList.add("hidden"); // Sembunyikan tabel
+
+  try {
+    await fetchData(); // Panggil ulang fetchData()
+  } catch (error) {
+    console.error("Gagal memuat data:", error);
+    Swal.fire("Gagal!", "Data tidak dapat dimuat.", "error");
+  } finally {
+    // Sembunyikan loading, kembalikan tombol dan tampilkan tabel
+    refreshBtn.disabled = false;
+    refreshBtn.innerHTML = "Refresh";
+    loadingIndicator.classList.add("hidden");
+    tableBody.parentElement.classList.remove("hidden");
+  }
+}
+
+
+</script>
+</body>
+</html>
